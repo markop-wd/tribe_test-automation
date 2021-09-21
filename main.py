@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 
 class TestLoginPage(unittest.TestCase):
-    main_page_cond = ec.visibility_of_element_located((By.CSS_SELECTOR, 'input[placeholder="Search by name"]'))
+    main_page_cond = ec.visibility_of_element_located((By.CSS_SELECTOR, 'div#main_header'))
 
     def setUp(self) -> None:
         load_dotenv('.env')
@@ -65,7 +65,6 @@ class TestLoginPage(unittest.TestCase):
                                                    value='div#popup_forgot_sent div.content').text
         assert email_sent_text == 'Email sent successfully.'
         sleep(3)
-        main_handle = self.driver.current_window_handle
         link_to_go_to = MailParser.run(run_start_time)
         self.driver.get(link_to_go_to)
         WdWait(self.driver, 10).until(ec.presence_of_element_located((By.ID, 'password_reset_box')))
