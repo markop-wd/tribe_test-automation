@@ -15,14 +15,12 @@ from dotenv import load_dotenv
 
 
 class TestLoginPage(unittest.TestCase):
-
     main_page_cond = ec.visibility_of_element_located((By.CSS_SELECTOR, 'input[placeholder="Search by name"]'))
 
     def setUp(self) -> None:
         load_dotenv('.env')
-        self.email = os.environ.get('email')
-        self.password = os.environ.get('password')
-        self.email = os.environ.get('reset_pass')
+        self.email = os.environ.get('tribe_regular_email')
+        self.password = os.environ.get('tribe_regular_password')
 
         self.driver = Chrome(executable_path=ChromeDriverManager().install())
         self.driver.implicitly_wait(10)
@@ -33,8 +31,8 @@ class TestLoginPage(unittest.TestCase):
     def tearDown(self) -> None:
         self.driver.quit()
 
-    # TODO - Validate the time it took to login
     def test_positive(self):
+        # TODO - Validate the time it took to login
         self.driver.find_element(by=By.ID, value='email').send_keys(self.email)
         self.driver.find_element(by=By.ID, value='password').send_keys(self.password)
         self.driver.find_element(by=By.CSS_SELECTOR, value='button.Button').click()
@@ -55,6 +53,7 @@ class TestLoginPage(unittest.TestCase):
         self.assertEqual('Please include an email', alert_text)
 
     # TODO - store the valid password for the account before and after the reset
+
     def test_forgot_pass(self):
         run_start_time = datetime.datetime.now()
         self.driver.find_element(by=By.ID, value="forgot_password").click()
@@ -63,14 +62,17 @@ class TestLoginPage(unittest.TestCase):
         email_input.send_keys('marko.pom94@gmail.com')
         self.driver.find_element(by=By.CSS_SELECTOR, value='div.Popup > div:nth-child(3) button').click()
         email_sent_text = self.driver.find_element(by=By.CSS_SELECTOR,
-                                                   value='body > div:nth-child(9) > '
-                                                         'div:nth-child(1) > div > div > div').text
+                                                   value='div#popup_forgot_sent div.content').text
         assert email_sent_text == 'Email sent successfully.'
         sleep(3)
-        # main_handle = self.driver.current_window_handle
+        main_handle = self.driver.current_window_handle
         link_to_go_to = MailParser.run(run_start_time)
-        self.driver.execute_script(f"window.open({link_to_go_to});")
-        input('hello')
+        self.driver.get(link_to_go_to)
+        WdWait(self.driver, 10).until(ec.presence_of_element_located((By.ID, 'password_reset_box')))
+        self.driver.find_element(by=By.CSS_SELECTOR, value='input[placeholder="New password"]').send_keys('testTEST1')
+        self.driver.find_element(by=By.CSS_SELECTOR, value='input[placeholder="Confirmation"]').send_keys('testTEST1')
+        self.driver.find_element(by=By.ID, value='password_change_btn').click()
+        WdWait(self.driver, 10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div#main_header')))
 
 
 if __name__ == '__main__':

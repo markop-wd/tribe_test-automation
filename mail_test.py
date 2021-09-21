@@ -7,9 +7,12 @@ from time import sleep
 from bs4 import BeautifulSoup
 from datetime import datetime
 from email.message import Message
+from dotenv import load_dotenv
 
 
 class MailParser:
+    load_dotenv('.env')
+
     username = os.environ.get('gmail_username')
     password = os.environ.get('gmail_password')
 
