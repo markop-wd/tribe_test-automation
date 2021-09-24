@@ -1,30 +1,32 @@
+"""
+A way to wait for the e-mail with the given subject to arrive and then parse it for the reset link
+"""
 import imaplib
-import email
 import os
-from email.header import decode_header
 from time import sleep
+from datetime import datetime
+from email.header import decode_header
+from email.message import Message
+import email
 
 from bs4 import BeautifulSoup
-from datetime import datetime
-from email.message import Message
 from dotenv import load_dotenv
 
 
 class MailParser:
+    """
+    Main functions of the e-mail parsing and waiting
+    """
     load_dotenv('.env')
-
-    username = os.environ.get('gmail_username')
-    password = os.environ.get('gmail_password')
 
     href_identifier = 'sendgrid.net'
     mail_subject = 'Your password reset request'
     mail_from = 'support@tribe.xyz'
 
     imap = imaplib.IMAP4_SSL("imap.gmail.com")
-    imap.login(username, password)
+    imap.login(os.environ.get('gmail_username'), os.environ.get('gmail_password'))
 
-    @classmethod
-    def run(cls, call_date: datetime):
+    def run(self, call_date: datetime):
         """
         Main business logic of the class
         :param call_date: datetime when the forgot password was clicked
@@ -34,11 +36,11 @@ class MailParser:
         """
 
         # Get the total number of messages in the inbox
-        _, messages = cls.imap.select("INBOX", readonly=True)
+        _, messages = self.imap.select("INBOX", readonly=True)
         message_total = int(messages[0])
 
         # Get the first/latest message from the inbox and check if it matches
-        latest_msg = cls.get_mail(message_total)
+        latest_msg = self.get_mail(message_total)
 
         # Get the date of the message
         date, date_enc = decode_header(latest_msg["Date"])[0]
@@ -54,31 +56,29 @@ class MailParser:
             except ValueError:
                 try:
                     date_dtm = datetime.strptime(date, "%a, %d %b %Y %H:%M:%S %z (%Z)")
-                except ValueError:
-                    raise DateParseError
+                except ValueError as exc:
+                    raise DateParseError from exc
 
         date_dtm = date_dtm.replace(tzinfo=None)
 
         # Check if the time when we called the function is later than the latest email date
         if call_date > date_dtm:
-            return cls.waiter(message_total)
-        else:
-            # If the latest e-mail is after the call date loop over
-            for email_id in reversed(range(1, message_total + 1)):
-                msg = cls.get_mail(email_id)
-                return_date = cls.header_parse(msg)
-                if not return_date:
-                    continue
-                # If a fitting message was found (via header_parse)
-                # Make sure it's after the call date
-                elif return_date and (call_date > return_date):
-                    return cls.waiter(message_total)
-                # If there is a proper header and the date is after the call date return the message
-                else:
-                    return cls.message_parse(msg)
+            return self.waiter(message_total)
 
-    @classmethod
-    def get_mail(cls, mail_id: int):
+        # If the latest e-mail is after the call date loop over
+        for email_id in reversed(range(1, message_total + 1)):
+            msg = self.get_mail(email_id)
+            return_date = self.header_parse(msg)
+            if not return_date:
+                continue
+            # If a fitting message was found (via header_parse)
+            # Make sure it's after the call date
+            if return_date and (call_date > return_date):
+                return self.waiter(message_total)
+            # If there is a proper header and the date is after the call date return the message
+            return self.message_parse(msg)
+
+    def get_mail(self, mail_id: int):
         """
         Returns the email with the corresponding email_id ID
         :param mail_id: ID of the e-mail, usually in the int form
@@ -86,14 +86,13 @@ class MailParser:
         :return: the Message that corresponds to the mail_id ID
         :rtype: Message
         """
-        _, message_list = cls.imap.fetch(str(mail_id), "(RFC822)")
+        _, message_list = self.imap.fetch(str(mail_id), "(RFC822)")
         response = message_list[0]
         # noinspection PyUnresolvedReferences
         msg = email.message_from_bytes(response[1])
         return msg
 
-    @classmethod
-    def waiter(cls, message_total: int):
+    def waiter(self, message_total: int):
         """
         Function that waits for the proper forgot e-mail to arrive if none was detected initially
         :param message_total: current number of messages in the inbox
@@ -107,39 +106,46 @@ class MailParser:
             if loop_count >= 60:
                 raise EmailTimeout
             sleep(10)
-            new_messages = cls.reselect()
+            new_messages = self.reselect()
             # If a new message arrived check it
             if new_messages > message_total:
                 # If only one new message arrived new_messages will equal to the ID of the newest
                 if message_total + 1 == new_messages:
-                    msg = cls.get_mail(new_messages)
-                    if not cls.header_parse(msg):
+                    msg = self.get_mail(new_messages)
+                    if not self.header_parse(msg):
                         message_total = new_messages
                         continue
-                    else:
-                        return cls.message_parse(msg)
-                else:
-                    # If multiple messages arrived parse through all of their headers
-                    for new_email in reversed(range(message_total, new_messages + 1)):
-                        msg = cls.get_mail(new_email)
 
-                        if not cls.header_parse(msg):
-                            continue
-                        else:
-                            return cls.message_parse(msg)
+                    return self.message_parse(msg)
 
-                    message_total = new_messages
+                # If multiple messages arrived parse through all of their headers
+                for new_email in reversed(range(message_total, new_messages + 1)):
+                    msg = self.get_mail(new_email)
 
-            loop_count += 1
+                    if not self.header_parse(msg):
+                        continue
 
-    @classmethod
-    def reselect(cls):
-        _, messages = cls.imap.select("INBOX", readonly=True)
+                    return self.message_parse(msg)
+
+                message_total = new_messages
+
+        loop_count += 1
+
+    def reselect(self):
+        """
+        Just a quick way to check the message total in the inbox
+        :return:
+        """
+        _, messages = self.imap.select("INBOX", readonly=True)
         message_total = int(messages[0])
         return message_total
 
-    @classmethod
-    def message_parse(cls, msg: Message):
+    def message_parse(self, msg: Message):
+        """
+        Parse the message for the reset message URL
+        :param msg:
+        :return:
+        """
         for part in msg.walk():
             # extract content type of email
             content_type = part.get_content_type()
@@ -147,35 +153,41 @@ class MailParser:
             try:
                 body = part.get_payload(decode=True).decode()
             except AttributeError:
-                pass
+                continue
             else:
                 if content_type == "text/plain":
                     continue
-                elif content_type == "text/html":
-                    mail_soup = BeautifulSoup(body, 'html.parser')
-                    all_a = mail_soup.find_all('a')
-                    for a in all_a:
-                        a_href = a.get('href')
-                        if cls.href_identifier in a_href:
-                            return a_href
-                    else:
-                        raise MailParseException
 
-    @classmethod
-    def header_parse(cls, msg: Message):
+                if content_type == "text/html":
+                    mail_soup = BeautifulSoup(body, 'html.parser')
+                    all_a_els = mail_soup.find_all('a')
+                    for a_el in all_a_els:
+                        a_href = a_el.get('href')
+                        if self.href_identifier in a_href:
+                            return a_href
+
+                    raise MailParseException
+        return None
+
+    def header_parse(self, msg: Message):
+        """
+        Parsing the header and checking/exiting if the header subject does not match or sender or date. In that order
+        :param msg: message upon which to perform header_parse upon
+        :return: date when the message was received
+        """
         # decode the email subject
         subject, subject_enc = decode_header(msg["Subject"])[0]
         if isinstance(subject, bytes):
             # if it's a bytes, decode to str
             subject = subject.decode(subject_enc)
-        if subject != cls.mail_subject:
+        if subject != self.mail_subject:
             return False
 
         # decode email sender
         msg_from, from_enc = decode_header(msg.get("From"))[0]
         if isinstance(msg_from, bytes):
             msg_from = msg_from.decode(from_enc)
-        if msg_from != cls.mail_from:
+        if msg_from != self.mail_from:
             return False
 
         # decode the date
@@ -198,29 +210,40 @@ class MailParser:
 
 
 class MailParseException(Exception):
+    """
+    Exception raised when there is no appropriate href url in the e-mail
+    """
     def __init__(self, message="sendgrid.net not found as a link in the e-mail"):
         self.message = message
-        super(MailParseException, self).__init__(self.message)
+        super().__init__(self.message)
 
 
 class MultipartException(Exception):
+    """
+    Exception when the message is not multi-part, as the logic for that is not implemented/needed
+    """
     def __init__(self, message="Message is not multi-part, this has not been implemented"):
         self.message = message
-        super(MultipartException, self).__init__(self.message)
+        super().__init__(self.message)
 
 
 class EmailTimeout(Exception):
+    """
+    Custom exception to raise after 10 minutes of attempts to find the e-mail
+    """
     def __init__(self, message="Reset password e-mail has not arrived after 10 minutes"):
         self.message = message
-        super(EmailTimeout, self).__init__(self.message)
+        super().__init__(self.message)
 
 
 class DateParseError(Exception):
+    """
+    Date formatting in e-mails can take on many forms and I don't think I implemented them all - hence this
+    """
     def __init__(self, message=""):
         self.message = message
-        super(DateParseError, self).__init__(self.message)
+        super().__init__(self.message)
 
 
 # test = datetime.strptime('2021, 09, 08, 19, 50, 30', '%Y, %d, %m, %H, %M, %S')
 # print(MailParser.run(test))
-
