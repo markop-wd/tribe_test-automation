@@ -17,14 +17,16 @@ class MailParser:
     """
     Main functions of the e-mail parsing and waiting
     """
-    load_dotenv('.env')
-
-    href_identifier = 'sendgrid.net'
-    mail_subject = 'Your password reset request'
-    mail_from = 'support@tribe.xyz'
-
-    imap = imaplib.IMAP4_SSL("imap.gmail.com")
-    imap.login(os.environ.get('gmail_username'), os.environ.get('gmail_password'))
+    
+    def __init__(self):
+        load_dotenv('.env')
+    
+        self.href_identifier = 'sendgrid.net'
+        self.mail_subject = 'Your password reset request'
+        self.mail_from = 'support@tribe.xyz'
+    
+        self.imap = imaplib.IMAP4_SSL("imap.gmail.com")
+        self.imap.login(os.environ.get('gmail_username'), os.environ.get('gmail_password'))
 
     def run(self, call_date: datetime):
         """
@@ -58,8 +60,6 @@ class MailParser:
                     date_dtm = datetime.strptime(date, "%a, %d %b %Y %H:%M:%S %z (%Z)")
                 except ValueError as exc:
                     raise DateParseError from exc
-
-        date_dtm = date_dtm.replace(tzinfo=None)
 
         # Check if the time when we called the function is later than the latest email date
         if call_date > date_dtm:
@@ -204,8 +204,6 @@ class MailParser:
             except ValueError:
                 date_dtm = datetime.strptime(date, "%a, %d %b %Y %H:%M:%S %z (%Z)")
 
-        date_dtm = date_dtm.replace(tzinfo=None)
-
         return date_dtm
 
 
@@ -213,6 +211,7 @@ class MailParseException(Exception):
     """
     Exception raised when there is no appropriate href url in the e-mail
     """
+
     def __init__(self, message="sendgrid.net not found as a link in the e-mail"):
         self.message = message
         super().__init__(self.message)
@@ -222,6 +221,7 @@ class MultipartException(Exception):
     """
     Exception when the message is not multi-part, as the logic for that is not implemented/needed
     """
+
     def __init__(self, message="Message is not multi-part, this has not been implemented"):
         self.message = message
         super().__init__(self.message)
@@ -231,6 +231,7 @@ class EmailTimeout(Exception):
     """
     Custom exception to raise after 10 minutes of attempts to find the e-mail
     """
+
     def __init__(self, message="Reset password e-mail has not arrived after 10 minutes"):
         self.message = message
         super().__init__(self.message)
@@ -240,10 +241,13 @@ class DateParseError(Exception):
     """
     Date formatting in e-mails can take on many forms and I don't think I implemented them all - hence this
     """
+
     def __init__(self, message=""):
         self.message = message
         super().__init__(self.message)
 
 
-# test = datetime.strptime('2021, 09, 08, 19, 50, 30', '%Y, %d, %m, %H, %M, %S')
-# print(MailParser.run(test))
+if __name__ == '__main__':
+    mp = MailParser()
+    test = datetime.strptime('2021, 10, 04, 20, 50, 30', '%Y, %d, %m, %H, %M, %S')
+    print(mp.run(test))

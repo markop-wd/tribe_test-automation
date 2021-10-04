@@ -21,7 +21,7 @@ project_setup = {
     'add_job': 'button#job_add',
     'show_archived': 'select#archived_select',
     # NOTE - For a particular (X) element use div#job_group > div.GroupItem:nth-child(X)
-    # NOTE - nth-child for the above is increasing in increments of 2 starting from 1
+    # nth-child for the above is increasing in increments of 2 starting from 1
     'archive': 'div#job_group > div.GroupItem button[title="Archive this job"]',
     'job_sequence': 'div#job_group > div.GroupItem div:nth-child(8) a',
     'recruiter': 'div#job_group > div.GroupItem div:nth-child(5) > select',
