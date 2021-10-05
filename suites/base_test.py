@@ -1,12 +1,12 @@
+from unittest import TestCase
+
+from selenium.common.exceptions import UnexpectedAlertPresentException
 from selenium.webdriver import Chrome
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
-from selenium.common.exceptions import UnexpectedAlertPresentException
-from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-
-from unittest import TestCase
 
 
 class BaseTest(TestCase):

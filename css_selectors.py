@@ -15,7 +15,6 @@ reset_pw = {
     'second_pw_input': 'input[placeholder="Confirmation"]'
 }
 
-
 project_setup = {
     'company_search': 'input[placeholder="Search a company"]',
     'company_add_button': 'button#company_add',
