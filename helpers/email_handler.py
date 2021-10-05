@@ -1,13 +1,13 @@
 """
 A way to wait for the e-mail with the given subject to arrive and then parse it for the reset link
 """
+import email
 import imaplib
 import os
-from time import sleep
 from datetime import datetime
 from email.header import decode_header
 from email.message import Message
-import email
+from time import sleep
 
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -17,14 +17,14 @@ class MailParser:
     """
     Main functions of the e-mail parsing and waiting
     """
-    
+
     def __init__(self):
-        load_dotenv('.env')
-    
+        load_dotenv('../.env')
+
         self.href_identifier = 'sendgrid.net'
         self.mail_subject = 'Your password reset request'
         self.mail_from = 'support@tribe.xyz'
-    
+
         self.imap = imaplib.IMAP4_SSL("imap.gmail.com")
         self.imap.login(os.environ.get('gmail_username'), os.environ.get('gmail_password'))
 

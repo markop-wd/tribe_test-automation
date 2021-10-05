@@ -1,13 +1,9 @@
 import os
 
-from unittest import TestCase
-
-from selenium.webdriver import Chrome
+from dotenv import load_dotenv
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.wait import WebDriverWait as WdWait
-from webdriver_manager.chrome import ChromeDriverManager
-from dotenv import load_dotenv
 
 from suites.base_test import BaseTest
 
@@ -20,7 +16,7 @@ class TestLoginPage(BaseTest):
 
     def setUp(self) -> None:
         super(TestLoginPage, self).setUp()
-        load_dotenv('../.env')
+        load_dotenv('../../.env')
         email = os.environ.get('tribe_regular_email')
         password = os.environ.get('tribe_regular_password')
         self.driver.find_element(by=By.ID, value='email').send_keys(email)
