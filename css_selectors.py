@@ -15,10 +15,13 @@ reset_pw = {
     'second_pw_input': 'input[placeholder="Confirmation"]'
 }
 
+
 project_setup = {
     'company_search': 'input[placeholder="Search a company"]',
-    'add_company': 'div[title="Add / Edit Client"]',
-    'add_job': 'button#job_add',
+    'company_add_button': 'button#company_add',
+    'company_add_popup': 'div#company_add_popup',
+    'job_add_popup': 'div#job_create_popup',
+    'job_add_button': 'button#job_add',
     'show_archived': 'select#archived_select',
     # NOTE - For a particular (X) element use div#job_group > div.GroupItem:nth-child(X)
     # nth-child for the above is increasing in increments of 2 starting from 1
