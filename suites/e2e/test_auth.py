@@ -18,17 +18,17 @@ from css_selectors import General as gen_css
 from css_selectors import PasswordReset as reset_css
 
 
-class TestLoginPage(BaseTest):
+class TestLoginPageSystem(BaseTest):
     """
     Basic authentication suite
     """
     main_page_cond = ec.visibility_of_element_located((By.CSS_SELECTOR, gen_css.main_header))
 
     def setUp(self) -> None:
-        super(TestLoginPage, self).setUp()
+        super(TestLoginPageSystem, self).setUp()
 
     def tearDown(self) -> None:
-        super(TestLoginPage, self).tearDown()
+        super(TestLoginPageSystem, self).tearDown()
 
     def test_forgot_pass(self):
         """
@@ -56,5 +56,5 @@ class TestLoginPage(BaseTest):
         WdWait(self.driver, 10).until(ec.presence_of_element_located((By.ID, 'password_reset_box')))
         self.driver.find_element(by=By.CSS_SELECTOR, value=reset_css.first_pw_input).send_keys('testTEST1')
         self.driver.find_element(by=By.CSS_SELECTOR, value=reset_css.second_pw_input).send_keys('testTEST1')
-        self.driver.find_element(by=By.ID, value=reset_css.change_pw_btn).click()
+        self.driver.find_element(by=By.CSS_SELECTOR, value=reset_css.change_pw_btn).click()
         WdWait(self.driver, 10).until(self.main_page_cond)
